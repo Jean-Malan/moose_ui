@@ -10,64 +10,61 @@
               <div id="invoice-app">
                 <div class="header">
                   <div>
-                    <h1>Invoice Builder</h1>
-                    <p>Date:  <input type="date" ></p>
+                    <h2>Tax Invoice</h2>
+                    {{salesItems}}
+                    <p>Date:  <Datepicker class="pull-right" format="YYYY-MM-DD" width="20%"/></p>
                   </div>
                   <div>
                     <div class="section-spacer">
-                      <input type="text" placeholder="Company Name" class="company-name">
-                      <textarea v-on:keyup="adjustTextAreaHeight"></textarea>
+                       <md-input placeholder="Company Name" class="textarea form-control"></md-input>
                     </div>
                     <div class="section-spacer">
                         <p><strong>Bill to:</strong></p>
-                        <textarea v-on:keyup="adjustTextAreaHeight"></textarea>
+                          <md-input placeholder="Company Name" class="textarea form-control"></md-input>
                       </div>
                   </div>
                 </div>
-                <!-- <div>
-                  <label for="currency-picker">Currency:</label>
-                  <select id="currency-picker" v-model="invoiceCurrency">
-                      <option v-for="currency in currencies" :value="currency">{{ currency.code }} - {{ currency.name }}</option>
-                  </select>
-                </div> -->
                 <table class="responsive-table">
                   <thead>
                     <tr>
                       <th>No</th>
                       <th>Item</th>
                       <th>Price/unite</th>
+                      <th>Vat</th>
                       <th>Quantity</th>
+                      <th>Vat</th>
                       <th>Total</th>
                       <th></th>
                     </tr>
                   </thead>
-                    <tr v-for="item in items">
+                    <tr v-for="item in items[0]">
                       <td data-label="No"></td>
-                      <td data-label="Item"><input type="text" /></td>
-                      <td data-label="Price/unite"><div class="cell-with-input"> <input type="number" min="0" /></div></td>
-                      <td data-label="Quantity"><input type="number" min="0"  /></td>
-                      <td data-label="Total"></td>
+                      <td data-label="Item"> <md-input placeholder="Item" v-model="item.description" class="textarea form-control"></md-input></td>
+                      <td data-label="Price/unite"> <md-input placeholder="Price"  v-model="item.gross_price" class="textarea form-control"></md-input></td>
+                      <td data-label="Vat Type"> <md-input placeholder="Price" v-model="item.vat_type" class="textarea form-control"></md-input></td>
+                      <td data-label="Quantity"> <md-input placeholder="Quantity"  v-model="item.quantity" class="textarea form-control"></md-input></td>
+                      <td data-label="Vat Toal">{{ calcVat(item.gross_price, item.quantity, item.vat_type) }}</td>
+                      <td data-label="Total">{{ (item.gross_price * item.quantity) }}</td>
                       <td class="text-right"><button @click="deleteItem" class="is-danger">Delete item</button></td>
                     </tr>
                   </table>
-
                     <button v-on:click="addNewItem">Add item</button>
                     <table>
-                      <!-- <tr>
-                        <td>Subtotal</td>
-                        <td>{{ decimalDigits(subTotal) }}</td>
-                      </tr> -->
                       <tr>
-                        <td><div class="cell-with-input">Discount <input class="text-right" type="number" min="0" max="100" v-model="discountRate" />%</div></td>
-                        <td></td>
+                        <td>Subtotal</td>
+                        <td>{{ subTotal }}</td>
                       </tr>
                       <tr>
-                        <td><div class="cell-with-input">Tax <input class="text-right" type="number" min="0" max="100" v-model="taxRate" />%</div></td>
-                        <td></td>
+                        <td>Discount (%)</td>
+                        <td><md-input type="number" min="0" max="100" v-model="discountRate"class="textarea form-control">%</md-input></td>
+                      </tr>
+                      <tr>
+                        <td>Tax</td>
+                        <td><md-input type="number" min="0" max="100" v-model="taxRate" class="textarea form-control">%</md-input></td>
                       </tr>
                       <tr class="text-bold">
                         <td>Grand Total</td>
-                        <td></td>
+                        <td>{{grandTotal}}</td>
                       </tr>
                     </table>
 
@@ -82,8 +79,10 @@
                     </div>
                       
                     <button v-on:click="printInvoice">Print Invoice</button>
+                    <md-button  class="close-button" @click="toggleNewSalesInvoice">Close</md-button >
                   </div>
               </main>
+
           </div>
         </div>
       </div>
@@ -93,9 +92,14 @@
 </template>
 
 <script>
+import { mapState, mapGetters, mapActions } from "vuex";
+import Datepicker from "vuejs-datetimepicker";
 export default {
+  props: ["sales"],
+  components: { Datepicker },
   data() {
     return {
+      Allsales: this.sales,
       invoiceCurrency: {
         symbol: "$",
         name: "US Dollar",
@@ -107,10 +111,11 @@ export default {
       },
       taxRate: 20,
       discountRate: 0,
-      items: [
-        { description: "Item name", quantity: 0, price: 0 },
-        { description: "Item name", quantity: 0, price: 0 }
-      ],
+      items: [],
+      // items: [
+      //   { description: "Item name", vat: 1, quantity: 4, price: 100 },
+      //   { description: "Item name", vat: 0, quantity: 2, price: 22 }
+      // ],
       currencies: [
         {
           symbol: "$",
@@ -167,8 +172,29 @@ export default {
     };
   },
   methods: {
+    ...mapGetters({
+      allSales: "sales/getAllSales"
+    }),
+    ...mapActions({
+      fetchAllSales: "sales/fetchAllSales",
+      toggleNewSalesInvoice: "modals/toggleNewSalesInvoice",
+      toggleNewContactModal: "modals/toggleNewContactModal"
+    }),
     addNewItem: function() {
-      this.items.push({ description: "Item name", quantity: 0, price: 0 });
+      this.items[0].push({
+        description: "New Item",
+        vat_type: "no_vat",
+        quantity: 0,
+        gross_price: 0
+      });
+    },
+    calcVat(price, quantity, vat) {
+      if (vat != "no_vat") {
+        var amount = price * quantity - ((price * quantity) / 115) * 100;
+        return Math.round(amount * 100) / 100;
+      } else {
+        return 0;
+      }
     },
     deleteItem: function(index) {
       this.items.splice(index, 1);
@@ -190,12 +216,12 @@ export default {
     }
   },
   computed: {
-    // subTotal: function() {
-    //   var total = this.items.reduce(function(accumulator, item) {
-    //     return accumulator + item.price * item.quantity;
-    //   }, 0);
-    //   return total;
-    // },
+    subTotal: function() {
+      var total = this.items[0].reduce(function(accumulator, item) {
+        return accumulator + item.gross_price * item.quantity;
+      }, 0);
+      return total;
+    },
     discountTotal: function() {
       var total = this.subTotal * (this.discountRate / 100);
       return total;
@@ -208,15 +234,22 @@ export default {
       var total = this.subTotal - this.discountTotal + this.taxTotal;
       return total;
     }
+  },
+  created() {
+    this.sales.map(sales =>
+      sales.attributes["sales-entries"].length > 0
+        ? this.items.push(sales.attributes["sales-entries"])
+        : "hi"
+    );
   }
 };
 </script>s
 
 <style lang="scss" scoped>
 $red: #ff5f6d;
-$yellow: #ffc371;
+$yellow: #fff;
 $green: #81cf71;
-$white: #faebd7;
+$white: #fff;
 $grey: darken($white, 10%);
 
 label {
@@ -255,8 +288,9 @@ button {
   margin-top: 5%;
 }
 .modal-container {
-  max-height: 100%;
-  width: 60%;
+  max-height: 90%;
+  overflow-y: scroll;
+  width: 80%;
   margin: 0px auto;
   padding: 20px 30px;
   background-color: #fff;
@@ -293,7 +327,7 @@ button {
 }
 
 body {
-  background: linear-gradient(to right, $red, $yellow);
+  background: linear-gradient(to right, $white, $white);
 }
 
 .main-content {
@@ -311,6 +345,7 @@ body {
   background-color: $white;
   padding: 2rem;
   border-radius: 0.5rem;
+  width: 100%;
 }
 
 .header {
@@ -332,38 +367,6 @@ body {
 
 .section-spacer {
   margin: 1rem 0;
-}
-
-input,
-select,
-textarea {
-  background-color: transparentize($color: white, $amount: 0.7);
-  border: none;
-  display: inline-block;
-  transition: background-color 0.3s ease-in-out;
-  width: 100%;
-
-  &:focus {
-    outline-color: $yellow;
-    background-color: transparentize($color: white, $amount: 0.4);
-  }
-
-  &:hover {
-    background-color: transparentize($color: white, $amount: 0.5);
-  }
-
-  @media print {
-    background-color: transparent;
-  }
-
-  @media only screen and (min-width: 761px) {
-    width: auto;
-  }
-}
-
-textarea {
-  width: 100%;
-  min-height: 80px;
 }
 
 select {
@@ -477,7 +480,7 @@ button {
   transition: background-color 0.3s ease-in-out;
 
   &:focus {
-    outline-color: $yellow;
+    outline-color: $white;
     background-color: darken($color: $green, $amount: 7%);
   }
 

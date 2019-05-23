@@ -34,7 +34,7 @@
           </md-card>
         </div>
         <div v-if="showNewSaleInvoice">
-          <salesInvoice> </salesInvoice>
+          <salesInvoice :sales="allSales[0]['data']"> </salesInvoice>
         </div>
       </div>
       <div
