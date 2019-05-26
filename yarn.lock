@@ -1362,11 +1362,6 @@ core-js@^2.4.0, core-js@^2.5.0:
   version "2.5.3"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.5.3.tgz#8acc38345824f16d8365b7c9b4259168e8ed603e"
 
-core-js@^3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.1.1.tgz#502ba6e7c15300de20a372b390f9fc9039db76f2"
-  integrity sha512-OddJJmAMN6czmPEtp1ScHFWq4RXzH1iWJFGL8CZ6UcopeBzCMjo4Slv0UoLW2hhny1/wsDowm6xCmBCWQ1azkA==
-
 core-util-is@1.0.2, core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
@@ -5192,11 +5187,6 @@ vue-select@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/vue-select/-/vue-select-3.1.0.tgz#ccebbc17e48f1e3be5f082224a0c45ceb07b8551"
   integrity sha512-DDC4W3s/wLlJ/oeR7tqwaN+Fw9CXQc4zNnOD8Lr8J2cyWgQOWnHuYAUvpGrWIt7PRea4jSu6quixEv5yTInpuQ==
-
-vue-simple-search-dropdown@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/vue-simple-search-dropdown/-/vue-simple-search-dropdown-1.0.1.tgz#72c6910122d09167d399653b88378e9e81098af0"
-  integrity sha512-r3LuGFB3WqMDRILx+Z/Y2S9UTLqMh3Y0nv1Oly+tt8oEzvg77r0tfYLHVqQlhsmVPy0GmSuxMMbetMkDRLOEqg==
 
 vue-style-loader@^3.0.0, vue-style-loader@^3.0.1:
   version "3.0.3"

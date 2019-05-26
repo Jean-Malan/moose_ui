@@ -1,4 +1,4 @@
-import sales from "@/api/sales.js"
+import salesApi from "@/api/sales.js"
 
 export default {
   namespaced: true,
@@ -7,18 +7,18 @@ export default {
   },
   actions: {
     fetchAllSales(context) {
-      var data = sales.allSales()
+      var data = salesApi.allSales()
       context.commit("setAllSales", data)
-      // return new Promise((resolve, reject) => {
-      //   sales.allSales(sale => {
-      //     console.log(sale)
-      //    
-      //     resolve()
-      //   })
-      // })
-    }
+    },
+    postNewSaleEntry(context, sales) {
+      let data = salesApi.postNewSaleEntry(sales)
+    },
   },
   mutations: {
+    addNewSaleEntry() {
+
+
+    },
     setAllSales(state, sales) {
       // update sales
       console.log(sales)

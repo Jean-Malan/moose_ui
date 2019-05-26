@@ -17,19 +17,17 @@ export default {
       })
     return sales
   },
-
-  newContact(data) {
+  postNewSaleEntry(attributes) {
     var responseData = []
     axios
-      .post("http://localhost:4001/api/contact", {
-        type: "gl_accounts",
+      .post("http://localhost:4001/api/sales_entries", {
+        type: "sales_entries",
         data: {
-          attributes: {
-            data
-          }
+          attributes
         }
       })
       .then(function (response) {
+        console.log("API Success", data)
         responseData.push(data)
       })
       .catch(function (error) {

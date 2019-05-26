@@ -11,7 +11,7 @@
                 <div class="header">
                   <div>
                     <h2>Tax Invoice</h2>
-                    {{salesItems}}
+
                     <p>Date:  <Datepicker class="pull-right" format="YYYY-MM-DD" width="20%"/></p>
                   </div>
                   <div>
@@ -37,11 +37,11 @@
                       <th></th>
                     </tr>
                   </thead>
-                    <tr v-for="item in items[0]">
-                      <td data-label="No"></td>
+                    <tr v-for="item in items">
+                      <td data-label="id"> <md-input placeholder="Item" v-model="item.id" class="textarea form-control"></md-input></td>
                       <td data-label="Item"> <md-input placeholder="Item" v-model="item.description" class="textarea form-control"></md-input></td>
                       <td data-label="Price/unite"> <md-input placeholder="Price"  v-model="item.gross_price" class="textarea form-control"></md-input></td>
-                      <td data-label="Vat Type"> <md-input placeholder="Price" v-model="item.vat_type" class="textarea form-control"></md-input></td>
+                      <td data-label="Vat Type"> <md-input placeholder="Price" v-model="item.vat_type" class="textarea form-control">{{item.vat_type }}</md-input></td>
                       <td data-label="Quantity"> <md-input placeholder="Quantity"  v-model="item.quantity" class="textarea form-control"></md-input></td>
                       <td data-label="Vat Toal">{{ calcVat(item.gross_price, item.quantity, item.vat_type) }}</td>
                       <td data-label="Total">{{ (item.gross_price * item.quantity) }}</td>
@@ -49,6 +49,7 @@
                     </tr>
                   </table>
                     <button v-on:click="addNewItem">Add item</button>
+                    <button v-on:click="save">save</button>
                     <table>
                       <tr>
                         <td>Subtotal</td>
@@ -68,7 +69,7 @@
                       </tr>
                     </table>
 
-                    <div class="section-spacer">
+                    <!-- <div class="section-spacer">
                       <p>Notes:</p>
                       <textarea v-on:keyup="adjustTextAreaHeight"></textarea>
                     </div>
@@ -77,7 +78,7 @@
                       <p>Terms:</p>
                       <textarea v-on:keyup="adjustTextAreaHeight"></textarea>
                     </div>
-                      
+                       -->
                     <button v-on:click="printInvoice">Print Invoice</button>
                     <md-button  class="close-button" @click="toggleNewSalesInvoice">Close</md-button >
                   </div>
@@ -99,7 +100,7 @@ export default {
   components: { Datepicker },
   data() {
     return {
-      Allsales: this.sales,
+      allSales: this.sales,
       invoiceCurrency: {
         symbol: "$",
         name: "US Dollar",
@@ -109,60 +110,14 @@ export default {
         code: "USD",
         name_plural: "US dollars"
       },
-      taxRate: 20,
+      taxRate: 0,
       discountRate: 0,
       items: [],
+      originalIds: [],
       // items: [
       //   { description: "Item name", vat: 1, quantity: 4, price: 100 },
       //   { description: "Item name", vat: 0, quantity: 2, price: 22 }
       // ],
-      currencies: [
-        {
-          symbol: "$",
-          name: "US Dollar",
-          symbol_native: "$",
-          decimal_digits: 2,
-          rounding: 0,
-          code: "USD",
-          name_plural: "US dollars"
-        },
-        {
-          symbol: "CA$",
-          name: "Canadian Dollar",
-          symbol_native: "$",
-          decimal_digits: 2,
-          rounding: 0,
-          code: "CAD",
-          name_plural: "Canadian dollars"
-        },
-        {
-          symbol: "€",
-          name: "Euro",
-          symbol_native: "€",
-          decimal_digits: 2,
-          rounding: 0,
-          code: "EUR",
-          name_plural: "euros"
-        },
-        {
-          symbol: "AED",
-          name: "United Arab Emirates Dirham",
-          symbol_native: "د.إ.‏",
-          decimal_digits: 2,
-          rounding: 0,
-          code: "AED",
-          name_plural: "UAE dirhams"
-        },
-        {
-          symbol: "Af",
-          name: "Afghan Afghani",
-          symbol_native: "؋",
-          decimal_digits: 0,
-          rounding: 0,
-          code: "AFN",
-          name_plural: "Afghan Afghanis"
-        }
-      ],
       company: {
         name: "Your company name",
         contact: "Your address\nYour tel\nYour email"
@@ -181,7 +136,7 @@ export default {
       toggleNewContactModal: "modals/toggleNewContactModal"
     }),
     addNewItem: function() {
-      this.items[0].push({
+      this.items.push({
         description: "New Item",
         vat_type: "no_vat",
         quantity: 0,
@@ -213,11 +168,28 @@ export default {
       var el = event.target;
       el.style.height = "1px";
       el.style.height = 25 + el.scrollHeight + "px";
+    },
+    updateEntry(entry) {
+      console.log("UUUUUPPPPPPPPPDDDDDDDAAAAAAAATTTEEEEEEEE");
+      // this.$store.dispatch("sales/postNewSaleEntry", entry);
+    },
+    newEntry(entry) {
+      console.log("NEEEEEEEEEEEW");
+      entry["sales_invoice_id"] = this.sales.attributes["id"];
+      // let data = entry, salesID];
+      this.$store.dispatch("sales/postNewSaleEntry", entry);
+    },
+    save() {
+      this.items.forEach(i => {
+        this.originalIds.includes(i.id)
+          ? this.updateEntry(i)
+          : this.newEntry(i);
+      });
     }
   },
   computed: {
     subTotal: function() {
-      var total = this.items[0].reduce(function(accumulator, item) {
+      var total = this.items.reduce(function(accumulator, item) {
         return accumulator + item.gross_price * item.quantity;
       }, 0);
       return total;
@@ -236,11 +208,17 @@ export default {
     }
   },
   created() {
-    this.sales.map(sales =>
-      sales.attributes["sales-entries"].length > 0
-        ? this.items.push(sales.attributes["sales-entries"])
-        : "hi"
-    );
+    console.log("Leeength");
+    console.log(this.sales.attributes);
+
+    if (this.sales.attributes["sales-entries"].length > 0) {
+      this.items = this.sales.attributes["sales-entries"];
+      this.originalIds = this.sales.attributes["sales-entries"].map(
+        se => se.id
+      );
+    }
+    console.log("IIIIIIIIIDDDDDDDDssssssss", this.originalIds);
+    console.log(this.items);
   }
 };
 </script>s
@@ -283,10 +261,6 @@ button {
   vertical-align: middle;
 }
 
-.login-content {
-  margin-left: 10%;
-  margin-top: 5%;
-}
 .modal-container {
   max-height: 90%;
   overflow-y: scroll;
@@ -331,8 +305,7 @@ body {
 }
 
 .main-content {
-  min-height: 100vh;
-  padding: 1rem;
+  padding: 0.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -343,8 +316,7 @@ body {
 
 #invoice-app {
   background-color: $white;
-  padding: 2rem;
-  border-radius: 0.5rem;
+  padding: 0.2rem;
   width: 100%;
 }
 

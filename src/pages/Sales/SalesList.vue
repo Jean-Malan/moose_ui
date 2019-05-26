@@ -20,13 +20,13 @@
             <md-card-content>
               <div>
                 <md-table v-model="allSales[0]['data']" >
-                  <md-table-row slot="md-table-row" @click="toggleNewSalesInvoice()" slot-scope="{ item }">
+                  <md-table-row slot="md-table-row" @click="showInvoice(item.attributes['id'])" slot-scope="{ item }">
                     <md-table-cell md-label="ID">{{ item.attributes['id'] }}</md-table-cell>
                     <md-table-cell md-label="Contact">{{ item.attributes.derived.contact }}</md-table-cell>
                     <md-table-cell md-label="Invoice Date">{{ item.attributes['invoice-date'] }}</md-table-cell>
                     <md-table-cell md-label="Invoice Number">{{ item.attributes['invoice-number'] }}</md-table-cell>
                     <md-table-cell md-label="Invoice Gross Amount">{{ item.attributes.derived.gross_amount }}</md-table-cell>
-                    <md-table-cell md-label="Invoice Vat Amount">{{ item.attributes.derived.vat_price }}</md-table-cell>
+                    <md-table-cell md-label="Invoice Vat Amount">{{ Math.round(item.attributes.derived.vat_price, 2) }}</md-table-cell>
                   </md-table-row>
                 </md-table>
               </div>
@@ -34,7 +34,7 @@
           </md-card>
         </div>
         <div v-if="showNewSaleInvoice">
-          <salesInvoice :sales="allSales[0]['data']"> </salesInvoice>
+          <salesInvoice :sales="activeSale"> </salesInvoice>
         </div>
       </div>
       <div
@@ -59,7 +59,8 @@ export default {
     return {
       currentUser: null,
       isLoading: true,
-      showModal: false
+      showModal: false,
+      activeSale: []
     };
   },
   props: {
@@ -78,6 +79,14 @@ export default {
   },
 
   methods: {
+    showInvoice(id) {
+      var saleIndex = this.allSales[0].data.findIndex(
+        sale => sale.attributes.id == id
+      );
+      this.activeSale = this.allSales[0].data[saleIndex];
+      console.log(this.activeSale);
+      this.toggleNewSalesInvoice();
+    },
     changeUser(user) {
       this.currentUser = user;
     },
